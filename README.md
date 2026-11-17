@@ -1,6 +1,6 @@
 # Queen's Trace — N-Queens Backtracking Visualizer & C++17 Solver
 
-Interactive web visualizer and C++17 backtracking solver for the generalized **N-Queens Constraint Satisfaction Problem**, combining the consolidated single-file `main.cpp` engine (`siddw09/queentrace`) with a modern dark-themed visual interface modeled after [n-queen-five.vercel.app](https://n-queen-five.vercel.app/).
+Interactive web visualizer and C++17 backtracking solver for the generalized **N-Queens Constraint Satisfaction Problem**, combining the consolidated single-file `main.cpp` engine (`siddw09/queentrace`) with a modern dark-themed visual interface https://siddw09.github.io/n_queen_trace/ .
 
 ## Key Capabilities
 
