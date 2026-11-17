@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Queen's Trace — N-Queens Visualizer</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+/* Queen's Trace — Inspired by n-queen-five.vercel.app */
+:root {
+  --bg-page: #18191a;
+  --bg-card: #242526;
+  --bg-card-inner: #2f3031;
+  --text-primary: #f5f6f7;
+  --text-secondary: #b0b3b8;
+  --heading-steel: #7c93b8;
+  --board-light: #eeeed2;
+  --board-dark: #769656;
+  --queen-fill: #262626;
+  --btn-start: #4ade80;
+  --btn-stop: #f43f5e;
+  --btn-solutions: #fb923c;
+  --btn-solutions-disabled: #fed7aa;
+  --btn-step: #3b82f6;
+  --btn-disabled: #4b5563;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navbar */
+.qt-navbar {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.qt-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.qt-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.qt-nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.98rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  transition: color 0.18s ease;
+  position: relative;
+}
+
+.qt-nav-btn:hover,
+.qt-nav-btn.active {
+  color: #ffffff;
+}
+
+.qt-nav-btn.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  border-radius: 2px;
+}
+
+/* Hero CTA Button */
+.qt-cta-btn {
+  background: linear-gradient(90deg, #2563eb 0%, #06b6d4 100%);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 0.78rem 2.4rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.28);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.qt-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(6, 182, 212, 0.4);
+}
+
+/* Cards */
+.qt-card {
+  background-color: var(--bg-card);
+  border-radius: 1rem;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Chessboard */
+.qt-board {
+  display: grid;
+  width: 100%;
+  max-width: 390px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border: 3px solid #3a3b3c;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.qt-mini-board {
+  display: grid;
+  width: 100%;
+  max-width: 210px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border: 2px solid #3a3b3c;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.qt-mini-board:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+.qt-cell-light {
+  background-color: var(--board-light);
+}
+
+.qt-cell-dark {
+  background-color: var(--board-dark);
+}
+
+.qt-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  user-select: none;
+}
+
+.qt-queen-icon {
+  width: 74%;
+  height: 74%;
+  animation: queenPop 0.16s cubic-bezier(0.2, 0.85, 0.4, 1.2);
+}
+
+@keyframes queenPop {
+  from {
+    transform: scale(0.45);
+    opacity: 0.2;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Sliders (Blue filled thumb & track against white track) */
+input[type="range"].qt-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  background: #ffffff;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"].qt-slider:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input[type="range"].qt-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+input[type="range"].qt-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+/* Action Pill Buttons matching n-queen-five.vercel.app */
+.qt-pill-btn {
+  border: none;
+  border-radius: 9999px;
+  padding: 0.52rem 1.35rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.15s ease, background-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+}
+
+.qt-pill-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.qt-btn-step {
+  background-color: var(--btn-step);
+  color: #ffffff;
+}
+
+.qt-btn-step:disabled {
+  background-color: var(--btn-disabled);
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.qt-btn-start {
+  background-color: var(--btn-start);
+  color: #111827;
+}
+
+.qt-btn-start:disabled {
+  background-color: var(--btn-disabled);
+  color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.qt-btn-stop {
+  background-color: var(--btn-stop);
+  color: #111827;
+}
+
+.qt-btn-stop:disabled {
+  background-color: var(--btn-disabled);
+  color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.qt-btn-solutions {
+  background-color: var(--btn-solutions);
+  color: #111827;
+}
+
+.qt-btn-solutions:disabled {
+  background-color: var(--btn-solutions-disabled);
+  color: #4b5563;
+  cursor: not-allowed;
+}
+
+  </style>
+</head>
+<body>
+  <!-- Top Navigation Bar matching n-queen-five.vercel.app -->
+  <header class="qt-navbar">
+    <button id="brandHomeBtn" type="button" class="qt-brand">
+      <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+      </svg>
+      <span>Queen's Trace</span>
+    </button>
+
+    <nav class="qt-nav-links">
+      <button id="navBtnHome" type="button" class="qt-nav-btn active">Home</button>
+      <button id="navBtnVisualize" type="button" class="qt-nav-btn">Visualize</button>
+    </nav>
+  </header>
+
+  <!-- ==================== VIEW 1: HOME PAGE (matches n-queen-five.vercel.app/) ==================== -->
+  <main id="viewHome" class="flex-1 flex flex-col justify-center max-w-6xl w-full mx-auto px-4 sm:px-8 py-10">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
+
+      <!-- Left Column: Static 6x6 Chessboard -->
+      <div class="md:col-span-6 flex flex-col items-center">
+        <div id="heroChessboard" class="qt-board"></div>
+        <span class="mt-3 text-xs text-gray-400 font-mono">6&times;6 Non-Attacking Queen Arrangement: [1, 3, 5, 0, 2, 4]</span>
+      </div>
+
+      <!-- Right Column: "The N-queens Problem" Heading & Description -->
+      <div class="md:col-span-6 space-y-5 text-center md:text-left">
+        <h1 class="text-3xl sm:text-5xl font-light tracking-wide" style="color: var(--heading-steel);">
+          The N-queens Problem
+        </h1>
+        <p class="text-base sm:text-lg text-gray-200 leading-relaxed">
+          The N queens puzzle is the problem of placing <span class="font-semibold text-white">N</span> chess queens on an
+          <span class="font-semibold text-white">n&times;n</span> chessboard so that no two queens threaten each other.
+          Thus, a solution requires that no two queens share the same row, column, or diagonal.
+        </p>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          Powered by the <span class="text-gray-200 font-medium">Queen's Trace C++17 Backtracking Engine</span>
+          (<code class="text-blue-400 font-mono">queens_[row] = col</code>), featuring unified diagonal conflict pruning
+          (<code class="text-blue-400 font-mono">|r1 - r2| == |c1 - c2|</code>), step-by-step state-space simulation,
+          and real-time <code class="text-blue-400 font-mono">SearchStats</code> telemetry.
+        </p>
+      </div>
+    </div>
+
+    <!-- Centered Call To Action Button -->
+    <div class="mt-12 flex justify-center">
+      <button id="heroCtaVisualize" type="button" class="qt-cta-btn">
+        <span>Visualize</span>
+        <span aria-hidden="true">&rarr;</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 2: VISUALIZE PAGE (matches n-queen-five.vercel.app/visualize) ==================== -->
+  <section id="viewVisualize" class="hidden flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+    <!-- Main Visualiser Card -->
+    <div class="qt-card p-5 sm:p-7 space-y-6">
+
+      <!-- Top Summary & C++17 Mode Selector -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+        <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+          Place <strong class="text-white">N</strong> chess queens on an <strong class="text-white">N&times;N</strong> chessboard so that no two queens share the same row, column, or diagonal.
+        </p>
+        <div class="flex items-center gap-1 bg-[#18191a] p-1 rounded-lg border border-white/10 self-start sm:self-auto shrink-0">
+          <button id="btnModeAll" type="button" class="px-3 py-1 rounded-md text-xs font-semibold bg-blue-600 text-white transition">
+            All Solutions (solveAll)
+          </button>
+          <button id="btnModeOne" type="button" class="px-3 py-1 rounded-md text-xs font-semibold text-gray-300 hover:text-white transition">
+            First Only (solveOne)
+          </button>
+        </div>
+      </div>
+
+      <!-- Slider Row: Board Size (1x1 to 8x8) & Speed (Slow, Medium, Fast, Lighting Fast) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 px-1">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-sm font-semibold text-gray-200">
+            <label for="sliderBoardSize">Board Size</label>
+            <span id="labelBoardSizeVal" class="text-blue-400 font-mono">4x4</span>
+          </div>
+          <input id="sliderBoardSize" type="range" min="1" max="8" value="4" class="qt-slider" />
+          <div class="flex justify-between text-[11px] text-gray-400 font-mono">
+            <span>1x1</span><span>2x2</span><span>3x3</span><span>4x4</span><span>5x5</span><span>6x6</span><span>7x7</span><span>8x8</span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-sm font-semibold text-gray-200">
+            <label for="sliderSpeed">Speed</label>
+            <span id="labelSpeedVal" class="text-blue-400 font-mono">Fast</span>
+          </div>
+          <input id="sliderSpeed" type="range" min="0" max="3" value="2" class="qt-slider" />
+          <div class="flex justify-between text-[11px] text-gray-400">
+            <span>Slow</span><span>Medium</span><span>Fast</span><span>Lighting Fast</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bold Solution Counters Row -->
+      <div class="flex flex-wrap items-center justify-around gap-4 py-2 bg-[#1f2022] rounded-xl border border-white/5">
+        <div id="counterPossibleSolutions" class="text-base sm:text-lg font-bold text-white tracking-tight">
+          2 Possible Solutions
+        </div>
+        <div id="counterSolutionsFound" class="text-base sm:text-lg font-bold text-white tracking-tight">
+          0 Solutions Found
+        </div>
+      </div>
+
+      <!-- Action Button Row: |<, Start, Stop, Solutions, >| -->
+      <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5">
+        <button id="btnStepBack" type="button" title="Step Backward" class="qt-pill-btn qt-btn-step" disabled>
+          |&lt;
+        </button>
+        <button id="btnStart" type="button" class="qt-pill-btn qt-btn-start">
+          Start
+        </button>
+        <button id="btnStop" type="button" class="qt-pill-btn qt-btn-stop" disabled>
+          Stop
+        </button>
+        <button id="btnSolutions" type="button" class="qt-pill-btn qt-btn-solutions">
+          Solutions
+        </button>
+        <button id="btnStepForward" type="button" title="Step Forward" class="qt-pill-btn qt-btn-step">
+          &gt;|
+        </button>
+      </div>
+
+      <!-- Interactive Main Chessboard -->
+      <div class="pt-1">
+        <div id="mainChessboard" class="qt-board"></div>
+        <div id="liveStepStatus" class="mt-3 text-center text-xs text-gray-300 font-mono">
+          Ready (4x4 board initialized). Click Start, Solutions, or &gt;| to trace.
+        </div>
+      </div>
+
+      <!-- C++17 SearchStats Telemetry Bar (from main.cpp) -->
+      <div class="pt-3 border-t border-white/10 grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+        <div class="bg-[#18191a] rounded-lg p-2 border border-white/5">
+          <div class="text-[11px] text-gray-400">Recursive Calls</div>
+          <div id="telemetryCalls" class="text-sm font-bold text-blue-400 font-mono">17</div>
+        </div>
+        <div class="bg-[#18191a] rounded-lg p-2 border border-white/5">
+          <div class="text-[11px] text-gray-400">Candidates Tested</div>
+          <div id="telemetryTested" class="text-sm font-bold text-cyan-400 font-mono">60</div>
+        </div>
+        <div class="bg-[#18191a] rounded-lg p-2 border border-white/5">
+          <div class="text-[11px] text-gray-400">Queen Placements</div>
+          <div id="telemetryPlaced" class="text-sm font-bold text-emerald-400 font-mono">16</div>
+        </div>
+        <div class="bg-[#18191a] rounded-lg p-2 border border-white/5">
+          <div class="text-[11px] text-gray-400">Backtracks</div>
+          <div id="telemetryBacktracks" class="text-sm font-bold text-rose-400 font-mono">16</div>
+        </div>
+        <div class="bg-[#18191a] rounded-lg p-2 border border-white/5 col-span-2 sm:col-span-1">
+          <div class="text-[11px] text-gray-400">Search Duration</div>
+          <div id="telemetryDuration" class="text-sm font-bold text-amber-300 font-mono">0.004 ms</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lower Solutions Card (Miniature Chessboards Grid) -->
+    <div class="qt-card p-5 sm:p-7 space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-white">Discovered Solutions</h2>
+          <p class="text-xs text-gray-400">Click any miniature board below to inspect it on the main chessboard</p>
+        </div>
+        <span id="miniSolutionsBadge" class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#18191a] text-gray-300 border border-white/10">
+          0 / 2 Displayed
+        </span>
+      </div>
+
+      <div id="miniSolutionsEmpty" class="py-8 text-center text-sm text-gray-400">
+        No solutions displayed yet. Click <strong class="text-emerald-400">Start</strong> to discover solutions progressively or <strong class="text-orange-400">Solutions</strong> to render all valid arrangements immediately.
+      </div>
+
+      <div id="miniSolutionsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[540px] overflow-y-auto pr-1"></div>
+    </div>
+
+  </section>
+
+  <script>
+// Queen's Trace — Core C++17 NQueensSolver Logic & Reference UI Controller
+const SPEED_LABELS = ['Slow', 'Medium', 'Fast', 'Lighting Fast'];
+const SPEED_DELAYS_MS = [520, 220, 75, 14];
+const HERO_6X6_SOLUTION = [1, 3, 5, 0, 2, 4];
+
+const QUEEN_SVG = `<svg class="qt-queen-icon" viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#262626" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 9,26 C 17.5,24.5 30,24.5 36,26 L 38.5,13.5 L 31,25 L 30.7,10.9 L 25.5,24.5 L 22.5,10 L 19.5,24.5 L 14.3,10.9 L 14,25 L 6.5,13.5 L 9,26 z"/>
+    <path d="M 9,26 C 9,28 10.5,28 11.5,30 C 12.5,31.5 12.5,31 12,33.5 C 10.5,34.5 11,36 11,36 C 9.5,37.5 11,38.5 11,38.5 C 17.5,39.5 27.5,39.5 34,38.5 C 34,38.5 35.5,37.5 34,36 C 34,36 34.5,34.5 33,33.5 C 32.5,31 32.5,31.5 33.5,30 C 34.5,28 36,28 36,26 C 27.5,24.5 17.5,24.5 9,26 z"/>
+    <circle cx="6" cy="12" r="2" />
+    <circle cx="14" cy="9" r="2" />
+    <circle cx="22.5" cy="8" r="2" />
+    <circle cx="31" cy="9" r="2" />
+    <circle cx="39" cy="12" r="2" />
+  </g>
+</svg>`;
+
+const appState = {
+  view: 'home',            // 'home' | 'visualize'
+  boardSize: 4,            // 1 to 8 (or up to 10)
+  speedIndex: 2,           // 0: Slow, 1: Medium, 2: Fast, 3: Lighting Fast
+  solverMode: 'all',       // 'all' (solveAll) | 'one' (solveOne)
+  isRunning: false,
+  timerId: null,
+  solutions: [],           // All valid solutions from solver
+  trace: [],               // Step-by-step trace events from solveHelper
+  traceCursor: -1,         // Current index in trace (-1 = initial empty board)
+  currentBoard: [-1, -1, -1, -1],
+  discoveredSolutions: [], // Solutions discovered so far during trace or via Solutions button
+  allSolutionsRendered: false,
+  stats: {
+    recursiveCalls: 0,
+    candidatePlacementsAttempted: 0,
+    successfulPlacements: 0,
+    backtracks: 0,
+    totalSolutionsFound: 0,
+    durationMilliseconds: 0.0
+  },
+  backendMode: 'C++17 Engine (In-Memory STL Port)'
+};
+
+// Exact C++17 NQueensSolver implementation matching main.cpp
+function cppIsSafe(queens, row, col) {
+  for (let r = 0; r < row; ++r) {
+    const c = queens[r];
+    if (c !== -1 && (c === col || Math.abs(r - row) === Math.abs(c - col))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function executeCppSolverInMemory(n, mode) {
+  const queens = new Array(n).fill(-1);
+  const solutions = [];
+  const trace = [];
+  const stopAtFirst = (mode === 'one');
+
+  let recursiveCalls = 0;
+  let candidatePlacementsAttempted = 0;
+  let successfulPlacements = 0;
+  let backtracks = 0;
+
+  const t0 = performance.now();
+
+  function solveHelper(row) {
+    ++recursiveCalls;
+    if (row === n) {
+      const solCopy = queens.slice();
+      solutions.push(solCopy);
+      if (trace.length < 5000) {
+        trace.push({
+          type: 'solution',
+          row: row - 1,
+          col: queens[row - 1],
+          board: solCopy.slice(),
+          solutionsSoFar: solutions.length,
+          solutionVector: solCopy.slice()
+        });
+      }
+      return stopAtFirst;
+    }
+
+    for (let col = 0; col < n; ++col) {
+      ++candidatePlacementsAttempted;
+      if (cppIsSafe(queens, row, col)) {
+        queens[row] = col;
+        ++successfulPlacements;
+        if (trace.length < 5000) {
+          trace.push({
+            type: 'place',
+            row,
+            col,
+            board: queens.slice(),
+            solutionsSoFar: solutions.length
+          });
+        }
+
+        if (solveHelper(row + 1)) {
+          return true;
+        }
+
+        queens[row] = -1;
+        ++backtracks;
+        if (trace.length < 5000) {
+          trace.push({
+            type: 'remove',
+            row,
+            col,
+            board: queens.slice(),
+            solutionsSoFar: solutions.length
+          });
+        }
+      }
+    }
+    return false;
+  }
+
+  solveHelper(0);
+  const t1 = performance.now();
+
+  return {
+    success: true,
+    boardSize: n,
+    mode,
+    solutionCount: solutions.length,
+    solutions,
+    stats: {
+      recursiveCalls,
+      candidatePlacementsAttempted,
+      successfulPlacements,
+      backtracks,
+      totalSolutionsFound: solutions.length,
+      durationMilliseconds: t1 - t0
+    },
+    trace
+  };
+}
+
+function renderChessboard(containerEl, n, queenColumns) {
+  if (!containerEl) return;
+  containerEl.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+  containerEl.innerHTML = '';
+
+  for (let r = 0; r < n; ++r) {
+    for (let c = 0; c < n; ++c) {
+      const isDark = (r + c) % 2 === 1;
+      const cell = document.createElement('div');
+      cell.className = `qt-cell ${isDark ? 'qt-cell-dark' : 'qt-cell-light'}`;
+      if (queenColumns && queenColumns[r] === c) {
+        cell.innerHTML = QUEEN_SVG;
+      }
+      containerEl.appendChild(cell);
+    }
+  }
+}
+
+function updateSliderFill(sliderEl) {
+  if (!sliderEl) return;
+  const min = parseFloat(sliderEl.min || '0');
+  const max = parseFloat(sliderEl.max || '100');
+  const val = parseFloat(sliderEl.value || '0');
+  const pct = ((val - min) / (max - min)) * 100;
+  sliderEl.style.background = `linear-gradient(90deg, #3b82f6 ${pct}%, #ffffff ${pct}%)`;
+}
+
+function renderMiniSolutionsGrid() {
+  const gridEl = document.getElementById('miniSolutionsGrid');
+  const emptyStateEl = document.getElementById('miniSolutionsEmpty');
+  const headerBadgeEl = document.getElementById('miniSolutionsBadge');
+  if (!gridEl || !emptyStateEl) return;
+
+  const list = appState.discoveredSolutions;
+  if (headerBadgeEl) {
+    headerBadgeEl.textContent = `${list.length} / ${appState.solutions.length} Displayed`;
+  }
+
+  if (list.length === 0) {
+    gridEl.innerHTML = '';
+    emptyStateEl.classList.remove('hidden');
+    return;
+  }
+
+  emptyStateEl.classList.add('hidden');
+  gridEl.innerHTML = '';
+
+  list.forEach((solCols, idx) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bg-[#2f3031] border border-white/10 rounded-xl p-3 flex flex-col items-center gap-2';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'w-full flex items-center justify-between text-xs text-gray-300 font-medium px-1';
+    titleRow.innerHTML = `<span>Solution #${idx + 1}</span><span class="font-mono text-[11px] text-blue-300">[${solCols.join(', ')}]</span>`;
+
+    const miniBoard = document.createElement('div');
+    miniBoard.className = 'qt-mini-board';
+    renderChessboard(miniBoard, appState.boardSize, solCols);
+
+    miniBoard.addEventListener('click', () => {
+      if (appState.isRunning) return;
+      appState.currentBoard = solCols.slice();
+      renderChessboard(document.getElementById('mainChessboard'), appState.boardSize, appState.currentBoard);
+      const statusEl = document.getElementById('liveStepStatus');
+      if (statusEl) {
+        statusEl.textContent = `Previewing Solution #${idx + 1}: queens_ = [${solCols.join(', ')}]`;
+      }
+    });
+
+    wrapper.appendChild(titleRow);
+    wrapper.appendChild(miniBoard);
+    gridEl.appendChild(wrapper);
+  });
+}
+
+function syncControlsAndTelemetry() {
+  const sizeSlider = document.getElementById('sliderBoardSize');
+  const speedSlider = document.getElementById('sliderSpeed');
+  const labelSize = document.getElementById('labelBoardSizeVal');
+  const labelSpeed = document.getElementById('labelSpeedVal');
+
+  if (sizeSlider) {
+    sizeSlider.value = String(appState.boardSize);
+    sizeSlider.disabled = appState.isRunning;
+    updateSliderFill(sizeSlider);
+  }
+  if (speedSlider) {
+    speedSlider.value = String(appState.speedIndex);
+    speedSlider.disabled = appState.isRunning;
+    updateSliderFill(speedSlider);
+  }
+  if (labelSize) {
+    labelSize.textContent = `${appState.boardSize}x${appState.boardSize}`;
+  }
+  if (labelSpeed) {
+    labelSpeed.textContent = SPEED_LABELS[appState.speedIndex];
+  }
+
+  // Counters matching n-queen-five.vercel.app
+  const possibleEl = document.getElementById('counterPossibleSolutions');
+  const foundEl = document.getElementById('counterSolutionsFound');
+  if (possibleEl) {
+    possibleEl.textContent = `${appState.solutions.length} Possible Solutions`;
+  }
+  if (foundEl) {
+    foundEl.textContent = `${appState.discoveredSolutions.length} Solutions Found`;
+  }
+
+  // Telemetry stats from main.cpp SearchStats
+  const st = appState.stats;
+  const elCalls = document.getElementById('telemetryCalls');
+  const elTested = document.getElementById('telemetryTested');
+  const elPlaced = document.getElementById('telemetryPlaced');
+  const elBacktracks = document.getElementById('telemetryBacktracks');
+  const elDuration = document.getElementById('telemetryDuration');
+  if (elCalls) elCalls.textContent = st.recursiveCalls.toLocaleString();
+  if (elTested) elTested.textContent = st.candidatePlacementsAttempted.toLocaleString();
+  if (elPlaced) elPlaced.textContent = st.successfulPlacements.toLocaleString();
+  if (elBacktracks) elBacktracks.textContent = st.backtracks.toLocaleString();
+  if (elDuration) elDuration.textContent = `${st.durationMilliseconds.toFixed(3)} ms`;
+
+  // Action Pill Buttons states
+  const btnStepBack = document.getElementById('btnStepBack');
+  const btnStart = document.getElementById('btnStart');
+  const btnStop = document.getElementById('btnStop');
+  const btnSolutions = document.getElementById('btnSolutions');
+  const btnStepForward = document.getElementById('btnStepForward');
+  const btnModeAll = document.getElementById('btnModeAll');
+  const btnModeOne = document.getElementById('btnModeOne');
+
+  if (btnStepBack) {
+    btnStepBack.disabled = appState.isRunning || appState.traceCursor < 0;
+  }
+  if (btnStart) {
+    btnStart.disabled = appState.isRunning;
+  }
+  if (btnStop) {
+    btnStop.disabled = !appState.isRunning;
+  }
+  if (btnSolutions) {
+    btnSolutions.disabled = appState.isRunning || appState.allSolutionsRendered || appState.solutions.length === 0;
+  }
+  if (btnStepForward) {
+    btnStepForward.disabled = appState.isRunning || appState.traceCursor >= appState.trace.length - 1;
+  }
+  if (btnModeAll && btnModeOne) {
+    btnModeAll.disabled = appState.isRunning;
+    btnModeOne.disabled = appState.isRunning;
+    if (appState.solverMode === 'all') {
+      btnModeAll.className = 'px-3 py-1 rounded-md text-xs font-semibold bg-blue-600 text-white transition';
+      btnModeOne.className = 'px-3 py-1 rounded-md text-xs font-semibold text-gray-300 hover:text-white transition';
+    } else {
+      btnModeOne.className = 'px-3 py-1 rounded-md text-xs font-semibold bg-blue-600 text-white transition';
+      btnModeAll.className = 'px-3 py-1 rounded-md text-xs font-semibold text-gray-300 hover:text-white transition';
+    }
+  }
+}
+
+function recomputeBoardData(resetDiscovered = true) {
+  stopSimulation(false);
+  const res = executeCppSolverInMemory(appState.boardSize, appState.solverMode);
+  appState.solutions = res.solutions;
+  appState.stats = res.stats;
+  appState.trace = res.trace;
+  appState.traceCursor = -1;
+  appState.currentBoard = new Array(appState.boardSize).fill(-1);
+
+  if (resetDiscovered) {
+    appState.discoveredSolutions = [];
+    appState.allSolutionsRendered = false;
+  }
+
+  renderChessboard(document.getElementById('mainChessboard'), appState.boardSize, appState.currentBoard);
+  renderMiniSolutionsGrid();
+  syncControlsAndTelemetry();
+
+  const statusEl = document.getElementById('liveStepStatus');
+  if (statusEl) {
+    statusEl.textContent = `Ready (${appState.boardSize}x${appState.boardSize} board initialized). Click Start, Solutions, or >| to trace.`;
+  }
+}
+
+function applyTraceCursor(cursorIdx) {
+  if (cursorIdx < 0) {
+    appState.traceCursor = -1;
+    appState.currentBoard = new Array(appState.boardSize).fill(-1);
+    appState.discoveredSolutions = [];
+    appState.allSolutionsRendered = false;
+    renderChessboard(document.getElementById('mainChessboard'), appState.boardSize, appState.currentBoard);
+    renderMiniSolutionsGrid();
+    syncControlsAndTelemetry();
+    const statusEl = document.getElementById('liveStepStatus');
+    if (statusEl) statusEl.textContent = 'Board reset to initial state.';
+    return;
+  }
+
+  const boundedIdx = Math.min(cursorIdx, appState.trace.length - 1);
+  appState.traceCursor = boundedIdx;
+  const ev = appState.trace[boundedIdx];
+  appState.currentBoard = ev.board.slice();
+
+  // Reconstruct discovered solutions up to boundedIdx
+  const foundList = [];
+  for (let i = 0; i <= boundedIdx; ++i) {
+    if (appState.trace[i].type === 'solution') {
+      foundList.push(appState.trace[i].board.slice());
+    }
+  }
+  appState.discoveredSolutions = foundList;
+  if (foundList.length === appState.solutions.length && appState.solutions.length > 0) {
+    appState.allSolutionsRendered = true;
+  }
+
+  renderChessboard(document.getElementById('mainChessboard'), appState.boardSize, appState.currentBoard);
+  renderMiniSolutionsGrid();
+  syncControlsAndTelemetry();
+
+  const statusEl = document.getElementById('liveStepStatus');
+  if (statusEl) {
+    if (ev.type === 'place') {
+      statusEl.textContent = `Step ${boundedIdx + 1}/${appState.trace.length}: Placed Queen at (Row ${ev.row}, Col ${ev.col})`;
+    } else if (ev.type === 'remove') {
+      statusEl.textContent = `Step ${boundedIdx + 1}/${appState.trace.length}: Backtracked -> Removed Queen from (Row ${ev.row}, Col ${ev.col})`;
+    } else if (ev.type === 'solution') {
+      statusEl.textContent = `Step ${boundedIdx + 1}/${appState.trace.length}: Solution #${ev.solutionsSoFar} Found! [${ev.board.join(', ')}]`;
+    }
+  }
+}
+
+function startSimulation() {
+  if (appState.isRunning) return;
+  if (appState.trace.length === 0) return;
+
+  // If at the end of trace, restart from beginning
+  if (appState.traceCursor >= appState.trace.length - 1) {
+    appState.traceCursor = -1;
+    appState.discoveredSolutions = [];
+    appState.allSolutionsRendered = false;
+    renderMiniSolutionsGrid();
+  }
+
+  appState.isRunning = true;
+  syncControlsAndTelemetry();
+
+  clearInterval(appState.timerId);
+  const delay = SPEED_DELAYS_MS[appState.speedIndex] || 75;
+
+  appState.timerId = setInterval(() => {
+    if (appState.traceCursor < appState.trace.length - 1) {
+      applyTraceCursor(appState.traceCursor + 1);
+    } else {
+      // Simulation finished: clear main board on 0-solution or after full run, re-enable controls
+      clearInterval(appState.timerId);
+      appState.timerId = null;
+      appState.isRunning = false;
+      if (appState.solutions.length === 0) {
+        appState.currentBoard = new Array(appState.boardSize).fill(-1);
+        renderChessboard(document.getElementById('mainChessboard'), appState.boardSize, appState.currentBoard);
+        const statusEl = document.getElementById('liveStepStatus');
+        if (statusEl) {
+          statusEl.textContent = `Search complete: 0 valid solutions exist for ${appState.boardSize}x${appState.boardSize}.`;
+        }
+      }
+      syncControlsAndTelemetry();
+    }
+  }, delay);
+}
+
+function stopSimulation(clearMainBoard = true) {
+  if (appState.timerId) {
+    clearInterval(appState.timerId);
+    appState.timerId = null;
+  }
+  appState.isRunning = false;
+  if (clearMainBoard) {
+    // Matches reference behavior: Stop halts animation, clears main board, preserves Solutions Found & mini boards
+    appState.currentBoard = new Array(appState.boardSize).fill(-1);
+    renderChessboard(document.getElementById('mainChessboard'), appState.boardSize, appState.currentBoard);
+    const statusEl = document.getElementById('liveStepStatus');
+    if (statusEl) {
+      statusEl.textContent = `Simulation stopped. Main board cleared (${appState.discoveredSolutions.length} solution(s) preserved below).`;
+    }
+  }
+  syncControlsAndTelemetry();
+}
+
+function showAllSolutionsImmediately() {
+  if (appState.isRunning) return;
+  appState.discoveredSolutions = appState.solutions.map(s => s.slice());
+  appState.allSolutionsRendered = true;
+
+  if (appState.solutions.length > 0) {
+    appState.currentBoard = appState.solutions[0].slice();
+    renderChessboard(document.getElementById('mainChessboard'), appState.boardSize, appState.currentBoard);
+  }
+  renderMiniSolutionsGrid();
+  syncControlsAndTelemetry();
+
+  const statusEl = document.getElementById('liveStepStatus');
+  if (statusEl) {
+    statusEl.textContent = `Rendered all ${appState.solutions.length} solution(s) in ${appState.stats.durationMilliseconds.toFixed(3)} ms.`;
+  }
+}
+
+function switchView(targetView) {
+  appState.view = targetView;
+  const homeSection = document.getElementById('viewHome');
+  const visSection = document.getElementById('viewVisualize');
+  const navHome = document.getElementById('navBtnHome');
+  const navVis = document.getElementById('navBtnVisualize');
+
+  if (targetView === 'home') {
+    stopSimulation(false);
+    homeSection.classList.remove('hidden');
+    visSection.classList.add('hidden');
+    navHome.classList.add('active');
+    navVis.classList.remove('active');
+  } else {
+    homeSection.classList.add('hidden');
+    visSection.classList.remove('hidden');
+    navHome.classList.remove('active');
+    navVis.classList.add('active');
+    recomputeBoardData(false);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Render static 6x6 board on Home page matching n-queen-five.vercel.app
+  renderChessboard(document.getElementById('heroChessboard'), 6, HERO_6X6_SOLUTION);
+
+  // Navigation handlers
+  document.getElementById('brandHomeBtn').addEventListener('click', () => switchView('home'));
+  document.getElementById('navBtnHome').addEventListener('click', () => switchView('home'));
+  document.getElementById('navBtnVisualize').addEventListener('click', () => switchView('visualize'));
+  document.getElementById('heroCtaVisualize').addEventListener('click', () => switchView('visualize'));
+
+  // Sliders
+  document.getElementById('sliderBoardSize').addEventListener('input', (e) => {
+    appState.boardSize = parseInt(e.target.value, 10);
+    recomputeBoardData(true);
+  });
+
+  document.getElementById('sliderSpeed').addEventListener('input', (e) => {
+    appState.speedIndex = parseInt(e.target.value, 10);
+    syncControlsAndTelemetry();
+  });
+
+  // Solver Mode toggle (solveAll vs solveOne from main.cpp)
+  document.getElementById('btnModeAll').addEventListener('click', () => {
+    if (appState.isRunning) return;
+    appState.solverMode = 'all';
+    recomputeBoardData(true);
+  });
+
+  document.getElementById('btnModeOne').addEventListener('click', () => {
+    if (appState.isRunning) return;
+    appState.solverMode = 'one';
+    recomputeBoardData(true);
+  });
+
+  // 5 Action Pill Buttons
+  document.getElementById('btnStart').addEventListener('click', () => startSimulation());
+  document.getElementById('btnStop').addEventListener('click', () => stopSimulation(true));
+  document.getElementById('btnSolutions').addEventListener('click', () => showAllSolutionsImmediately());
+
+  document.getElementById('btnStepForward').addEventListener('click', () => {
+    if (appState.isRunning) return;
+    if (appState.traceCursor < appState.trace.length - 1) {
+      applyTraceCursor(appState.traceCursor + 1);
+    }
+  });
+
+  document.getElementById('btnStepBack').addEventListener('click', () => {
+    if (appState.isRunning) return;
+    if (appState.traceCursor >= 0) {
+      applyTraceCursor(appState.traceCursor - 1);
+    }
+  });
+
+  // Initialize Visualize board data
+  recomputeBoardData(true);
+});
+
+  </script>
+</body>
+</html>
